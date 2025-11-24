@@ -1,9 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { Message, AISettings } from "../types";
 
-// Default client for image editing (Always uses Gemini for specific image tasks for now)
-const defaultAi = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 /**
  * Edits an image using Gemini 2.5 Flash Image based on a text prompt.
  * NOTE: Currently hardcoded to use Gemini as it handles image input natively and reliably.
@@ -14,9 +11,12 @@ export const editImageWithGemini = async (
   prompt: string,
   apiKey?: string
 ): Promise<string> => {
+  if (!apiKey) {
+    throw new Error("API Key is required for image editing. Please configure it in Settings.");
+  }
+  
   try {
-    // If user provided a specific Gemini key, use it, otherwise fall back to env
-    const client = apiKey ? new GoogleGenAI({ apiKey }) : defaultAi;
+    const client = new GoogleGenAI({ apiKey });
 
     const cleanBase64 = base64Image.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, '');
 
@@ -68,10 +68,12 @@ export async function* streamAppGeneration(history: Message[], settings: AISetti
 // --- Gemini Implementation ---
 
 async function* streamGemini(history: Message[], settings: AISettings) {
+  if (!settings.apiKey) {
+    throw new Error("API Key is required. Please configure it in Settings.");
+  }
+  
   try {
-    const client = settings.apiKey 
-        ? new GoogleGenAI({ apiKey: settings.apiKey }) 
-        : defaultAi;
+    const client = new GoogleGenAI({ apiKey: settings.apiKey });
 
     const formattedHistory = history.map(msg => ({
       role: msg.role,
